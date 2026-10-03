@@ -3,4 +3,4 @@ myenv/
 __pycache__/
 .env
 library_book_data.csv
-pyproject.toml
+.dockerignore
