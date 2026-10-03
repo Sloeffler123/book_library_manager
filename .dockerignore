@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.env
+*.db
+*.csv
+README.md
+testing/
+.pytest_cache/
+.ruff_cache/
