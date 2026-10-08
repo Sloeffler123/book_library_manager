@@ -1,0 +1,21 @@
+name: cd
+
+on:
+    push:
+        branches: [main]
+
+jobs:
+    tests:
+        name: Deploy
+        runs-on: ubuntu-latest
+
+        env:
+            TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+            TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v6
+              with:
+                python-version: '3.13'
+                cache: 'pip'
