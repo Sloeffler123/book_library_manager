@@ -8,7 +8,6 @@ from constants import (
     AUTHOR_TABLE_NAME,
     BOOK_DATE_READ_COLUMN_NAME,
     BOOK_ID_COLUMN_NAME,
-    BOOK_NAME_COLUMN,
     BOOK_REVIEW_COLUMN_NAME,
     BOOK_TABLE_NAME,
 )
@@ -158,7 +157,7 @@ def test_remove_data_from_table(db_connection, monkeypatch):
     monkeypatch.setattr("builtins.input", lambda _: "Y")
 
     remove_book_data_from_table(
-        BOOK_TABLE_NAME, BOOK_NAME_COLUMN, data_to_remove[0], db_connection
+        data_to_remove[0], db_connection
     )
     result = cursor.fetchone()
     assert result == None

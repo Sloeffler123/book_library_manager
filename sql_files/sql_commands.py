@@ -5,6 +5,8 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from constants import (
+    ALLOWED_TABLE_COLUMNS,
+    ALOWED_TABLES,
     AUTHOR_BOOKS_AUTHOR_ID,
     AUTHOR_BOOKS_BOOK_ID,
     AUTHOR_BOOKS_TABLE_NAME,
@@ -87,27 +89,30 @@ def add_read_date_to_book(connection_to_db):
     if user_input_isbn_title == "I":
         user_input = input("Please enter isbn: ").strip()
         cursor.execute(
-            f"UPDATE {BOOK_TABLE_NAME} SET {BOOK_DATE_READ_COLUMN_NAME} = ? WHERE {BOOK_ISBN_COLUMN} = ?",
+            f"UPDATE {BOOK_TABLE_NAME} SET {BOOK_DATE_READ_COLUMN_NAME} = ? WHERE {BOOK_ISBN_COLUMN} = ?", # nosec B608
             (
                 date_read,
                 user_input,
-            ),
+            ), 
         )
     else:
         user_input = input("Please enter book name: ").strip()
         cursor.execute(
-            f"UPDATE {BOOK_TABLE_NAME} SET {BOOK_DATE_READ_COLUMN_NAME} = ? WHERE {BOOK_NAME_COLUMN} = ?",
+            f"UPDATE {BOOK_TABLE_NAME} SET {BOOK_DATE_READ_COLUMN_NAME} = ? WHERE {BOOK_NAME_COLUMN} = ?", # nosec B608
             (
                 date_read,
                 user_input,
-            ),
+            ), 
         )
     connection_to_db.commit()
 
 
 def add_column_to_table(new_column_name, connection_to_db):
     cursor = connection_to_db
-    cursor.execute(f"ALTER TABLE {BOOK_TABLE_NAME} ADD COLUMN {new_column_name}")
+    if new_column_name in ALLOWED_TABLE_COLUMNS:
+        raise ValueError("Column name already exists")
+    add_new_column = f"""ALTER TABLE {BOOK_TABLE_NAME} ADD COLUMN {new_column_name}"""
+    cursor.execute(add_new_column)
     connection_to_db.commit()
 
 
@@ -119,34 +124,32 @@ def update_data_in_table(
     filter_value,
     connection_to_db,
 ):
+    if table_name not in ALOWED_TABLES or column_to_update not in ALLOWED_TABLE_COLUMNS or filter_column not in ALLOWED_TABLE_COLUMNS:
+        raise ValueError("Table name or column not found")
     cursor = connection_to_db
     sql = f"""
-        UPDATE {table_name} SET {column_to_update} = ? WHERE {filter_column} = ?
-        """
+        UPDATE {table_name} SET {column_to_update} = ? WHERE {filter_column} = ? 
+        """ # nosec B608
     cursor.execute(sql, (new_value, filter_value))
     connection_to_db.commit()
 
 
-def remove_book_data_from_table(table_name, column_name, data_name, connection_to_db):
+def remove_book_data_from_table(data_name, connection_to_db):
     cursor = connection_to_db.cursor()
     user_response = input(
-        f"Are you sure you want to delete {data_name} from {table_name} in {column_name}? : (Y or N) "
-    ).upper()
+        f"Are you sure you want to delete {data_name} from {BOOK_TABLE_NAME} in {BOOK_NAME_COLUMN}? : (Y or N) " # nosec B608
+    ).upper() 
     if user_response == "Y":
-        cursor.execute(
-            f"SELECT {BOOK_ID_COLUMN_NAME} FROM {BOOK_TABLE_NAME} WHERE {column_name} = ?", (data_name,)
-        )
+        query_bookid = f"""SELECT {BOOK_ID_COLUMN_NAME} FROM {BOOK_TABLE_NAME} WHERE {BOOK_NAME_COLUMN} = ?""" # nosec B608
+        cursor.execute(query_bookid, (data_name,))
         result = cursor.fetchone()
         if result:
             book_id = result[0]
-            cursor.execute(
-            f"DELETE FROM {AUTHOR_BOOKS_TABLE_NAME} WHERE {AUTHOR_BOOKS_BOOK_ID} = ?", (book_id,)
-            )
-        cursor.execute(
-                    f"DELETE FROM {table_name} WHERE {column_name} = ?", (data_name,)
-                )
+            delete_authorbookid = f"""DELETE FROM {AUTHOR_BOOKS_TABLE_NAME} WHERE {AUTHOR_BOOKS_BOOK_ID} = ?""" # nosec B608
+            cursor.execute(delete_authorbookid, (book_id,))
+        delete_book = f"""DELETE FROM {BOOK_TABLE_NAME} WHERE {BOOK_NAME_COLUMN} = ?""" # nosec B608
+        cursor.execute(delete_book, (data_name,))
         connection_to_db.commit()
-
 
 def filter_data_by_book_name_and_author(connection_to_db):
     cursor = connection_to_db.cursor()
@@ -155,7 +158,7 @@ def filter_data_by_book_name_and_author(connection_to_db):
         FROM {BOOK_TABLE_NAME} AS b 
         INNER JOIN {AUTHOR_BOOKS_TABLE_NAME} AS ab ON b.{BOOK_ID_COLUMN_NAME} = ab.{AUTHOR_BOOKS_BOOK_ID} 
         INNER JOIN {AUTHOR_TABLE_NAME} AS a ON ab.{AUTHOR_BOOKS_AUTHOR_ID} = a.{AUTHOR_ID_COLUMN_NAME} 
-        ORDER BY a.{AUTHOR_NAME_COLUMN}, b.{BOOK_NAME_COLUMN}"""
+        ORDER BY a.{AUTHOR_NAME_COLUMN}, b.{BOOK_NAME_COLUMN}""" # nosec B608
     cursor.execute(sql)
     data = cursor.fetchall()
     for i in data:
@@ -170,7 +173,7 @@ def filter_data_by_category_book_name_and_author_name(db_conneciton):
         FROM {BOOK_TABLE_NAME} AS b 
         INNER JOIN {AUTHOR_BOOKS_TABLE_NAME} AS ab ON b.{BOOK_ID_COLUMN_NAME} = ab.{AUTHOR_BOOKS_BOOK_ID} 
         INNER JOIN {AUTHOR_TABLE_NAME} AS a ON ab.{AUTHOR_BOOKS_AUTHOR_ID} = a.{AUTHOR_ID_COLUMN_NAME} 
-        ORDER BY b.{BOOK_CATEGORIES_COLUMN_NAME}, a.{AUTHOR_NAME_COLUMN}, b.{BOOK_NAME_COLUMN}"""
+        ORDER BY b.{BOOK_CATEGORIES_COLUMN_NAME}, a.{AUTHOR_NAME_COLUMN}, b.{BOOK_NAME_COLUMN}""" # nosec B608
     cursor.execute(sql)
     data = cursor.fetchall()
     return data
@@ -183,7 +186,7 @@ def filter_title_author_review_date_read(db_connection):
         FROM {BOOK_TABLE_NAME} AS b 
         INNER JOIN {AUTHOR_BOOKS_TABLE_NAME} AS ab ON b.{BOOK_ID_COLUMN_NAME} = ab.{AUTHOR_BOOKS_BOOK_ID} 
         INNER JOIN {AUTHOR_TABLE_NAME} AS a ON ab.{AUTHOR_BOOKS_AUTHOR_ID} = a.{AUTHOR_ID_COLUMN_NAME} 
-        ORDER BY b.{BOOK_NAME_COLUMN}, a.{AUTHOR_NAME_COLUMN}, b.{BOOK_REVIEW_COLUMN_NAME}, b.{BOOK_DATE_READ_COLUMN_NAME}"""
+        ORDER BY b.{BOOK_NAME_COLUMN}, a.{AUTHOR_NAME_COLUMN}, b.{BOOK_REVIEW_COLUMN_NAME}, b.{BOOK_DATE_READ_COLUMN_NAME}""" # nosec B608
     cursor.execute(sql)
     data = cursor.fetchall()
     return data
@@ -196,7 +199,7 @@ def export_all_data_to_csv(db_connection):
         FROM {BOOK_TABLE_NAME} AS b 
         INNER JOIN {AUTHOR_BOOKS_TABLE_NAME} AS ab ON b.{BOOK_ID_COLUMN_NAME} = ab.{AUTHOR_BOOKS_BOOK_ID} 
         INNER JOIN {AUTHOR_TABLE_NAME} AS a ON ab.{AUTHOR_BOOKS_AUTHOR_ID} = a.{AUTHOR_ID_COLUMN_NAME} 
-        """
+        """ # nosec B608
     cursor.execute(sql)
     data = cursor.fetchall()
     df = pd.DataFrame(data)

@@ -9,7 +9,7 @@ api_key = os.getenv("API_KEY")
 
 def get_book_data(isbn):
     response = requests.get(
-        f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}"
+        f"https://www.googleapis.com/books/v1/volumes?q=isbn:{isbn}&key={api_key}", timeout=5
     )
     data = response.json()
     title = data["items"][0]["volumeInfo"]["title"]
