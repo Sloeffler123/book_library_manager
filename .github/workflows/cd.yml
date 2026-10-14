@@ -19,3 +19,23 @@ jobs:
               with:
                 python-version: '3.13'
                 cache: 'pip'
+            
+            - name: Install Bandit
+              run: pip install bandit
+
+            - id: "auth"
+              uses: "google-github-actions/auth@v2"
+              with:
+                credentials_json: "${{ secrets.GCP_CRED }}"
+            
+            - name: "Set up Cloud SDK"
+              uses: "google-github-actions/setup-gcloud@v3"
+
+            - name: "Use gcloud CLI"
+              run: "gcloud info"
+
+            - name: "Build Docker image"
+              run: "gcloud builds submit --tag us-central1-docker.pkg.dev/library-manager-507510/booklibrarymanager/library_manager:latest"
+
+            - name: "Deploy to cloud run"
+              run: "gcloud run deploy Library-manager --image us-central1-docker.pdg.dev/library-manager-507510/booklibrarymanager/library_manager:latest --region us-central1 --allow-unauthenticated --project library-manager-507510 --max-instances=4"
