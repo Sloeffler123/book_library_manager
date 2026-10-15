@@ -38,4 +38,4 @@ jobs:
               run: "gcloud builds submit --tag us-central1-docker.pkg.dev/library-manager-507510/booklibrarymanager/library_manager:latest"
 
             - name: "Deploy to cloud run"
-              run: "gcloud run deploy library-manager --image us-central1-docker.pdg.dev/library-manager-507510/booklibrarymanager/library_manager:latest --region us-central1 --allow-unauthenticated --project library-manager-507510 --max-instances=4"
+              run: "gcloud run deploy library-manager --image us-central1-docker.pkg.dev/library-manager-507510/booklibrarymanager/library_manager:latest --region us-central1 --allow-unauthenticated --project library-manager-507510 --max-instances=4"
